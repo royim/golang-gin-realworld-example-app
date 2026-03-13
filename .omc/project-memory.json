@@ -1,0 +1,403 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1773384854171,
+  "projectRoot": "/Users/kyowon/Projects/study260313/golang-gin-realworld-example-app",
+  "techStack": {
+    "languages": [
+      {
+        "name": "Go",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "go.mod"
+        ]
+      }
+    ],
+    "frameworks": [],
+    "packageManager": "go",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": null,
+    "testCommand": null,
+    "lintCommand": null,
+    "devCommand": null,
+    "scripts": {}
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "docs",
+      "scripts"
+    ],
+    "gitBranches": {
+      "defaultBranch": "main",
+      "branchingStrategy": null
+    }
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "api": {
+      "path": "api",
+      "purpose": "API routes",
+      "fileCount": 2,
+      "lastAccessed": 1773384854164,
+      "keyFiles": [
+        "Conduit.postman_collection.json",
+        "run-api-tests.sh"
+      ]
+    },
+    "articles": {
+      "path": "articles",
+      "purpose": null,
+      "fileCount": 6,
+      "lastAccessed": 1773384854164,
+      "keyFiles": [
+        "doc.go",
+        "models.go",
+        "routers.go",
+        "serializers.go",
+        "unit_test.go"
+      ]
+    },
+    "common": {
+      "path": "common",
+      "purpose": null,
+      "fileCount": 4,
+      "lastAccessed": 1773384854164,
+      "keyFiles": [
+        "database.go",
+        "test_helpers.go",
+        "unit_test.go",
+        "utils.go"
+      ]
+    },
+    "data": {
+      "path": "data",
+      "purpose": "Data files",
+      "fileCount": 1,
+      "lastAccessed": 1773384854164,
+      "keyFiles": []
+    },
+    "docs": {
+      "path": "docs",
+      "purpose": "Documentation",
+      "fileCount": 2,
+      "lastAccessed": 1773384854164,
+      "keyFiles": []
+    },
+    "openspec": {
+      "path": "openspec",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1773384854164,
+      "keyFiles": [
+        "config.yaml"
+      ]
+    },
+    "scripts": {
+      "path": "scripts",
+      "purpose": "Build/utility scripts",
+      "fileCount": 3,
+      "lastAccessed": 1773384854165,
+      "keyFiles": [
+        "coverage.sh",
+        "gofmt.sh",
+        "run-api-tests.sh"
+      ]
+    },
+    "users": {
+      "path": "users",
+      "purpose": null,
+      "fileCount": 7,
+      "lastAccessed": 1773384854165,
+      "keyFiles": [
+        "doc.go",
+        "middlewares.go",
+        "models.go",
+        "routers.go",
+        "serializers.go"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "Makefile",
+      "accessCount": 10,
+      "lastAccessed": 1773390619358,
+      "type": "file"
+    },
+    {
+      "path": "e2e_test.go",
+      "accessCount": 9,
+      "lastAccessed": 1773390603730,
+      "type": "file"
+    },
+    {
+      "path": "",
+      "accessCount": 8,
+      "lastAccessed": 1773387950647,
+      "type": "directory"
+    },
+    {
+      "path": ".golangci.yml",
+      "accessCount": 8,
+      "lastAccessed": 1773389817239,
+      "type": "file"
+    },
+    {
+      "path": "articles/routers.go",
+      "accessCount": 8,
+      "lastAccessed": 1773390439801,
+      "type": "file"
+    },
+    {
+      "path": "hello.go",
+      "accessCount": 6,
+      "lastAccessed": 1773389437552,
+      "type": "file"
+    },
+    {
+      "path": "articles/models.go",
+      "accessCount": 6,
+      "lastAccessed": 1773389437701,
+      "type": "file"
+    },
+    {
+      "path": "users/middlewares.go",
+      "accessCount": 6,
+      "lastAccessed": 1773389438953,
+      "type": "file"
+    },
+    {
+      "path": "openspec/config.yaml",
+      "accessCount": 5,
+      "lastAccessed": 1773387162905,
+      "type": "file"
+    },
+    {
+      "path": "users/models.go",
+      "accessCount": 5,
+      "lastAccessed": 1773389438426,
+      "type": "file"
+    },
+    {
+      "path": "common/database.go",
+      "accessCount": 5,
+      "lastAccessed": 1773389439071,
+      "type": "file"
+    },
+    {
+      "path": "common/utils.go",
+      "accessCount": 5,
+      "lastAccessed": 1773389439331,
+      "type": "file"
+    },
+    {
+      "path": "CLAUDE.md",
+      "accessCount": 4,
+      "lastAccessed": 1773385610944,
+      "type": "file"
+    },
+    {
+      "path": "articles/unit_test.go",
+      "accessCount": 4,
+      "lastAccessed": 1773388233074,
+      "type": "file"
+    },
+    {
+      "path": "articles/serializers.go",
+      "accessCount": 4,
+      "lastAccessed": 1773389438053,
+      "type": "file"
+    },
+    {
+      "path": "articles/validators.go",
+      "accessCount": 4,
+      "lastAccessed": 1773389438240,
+      "type": "file"
+    },
+    {
+      "path": "users/routers.go",
+      "accessCount": 4,
+      "lastAccessed": 1773389438623,
+      "type": "file"
+    },
+    {
+      "path": "README.md",
+      "accessCount": 3,
+      "lastAccessed": 1773385561369,
+      "type": "file"
+    },
+    {
+      "path": "go.mod",
+      "accessCount": 3,
+      "lastAccessed": 1773385563007,
+      "type": "file"
+    },
+    {
+      "path": "common/test_helpers.go",
+      "accessCount": 3,
+      "lastAccessed": 1773385568351,
+      "type": "file"
+    },
+    {
+      "path": "users/serializers.go",
+      "accessCount": 3,
+      "lastAccessed": 1773388425122,
+      "type": "file"
+    },
+    {
+      "path": ".claude/commands/opsx-explore.md",
+      "accessCount": 2,
+      "lastAccessed": 1773387378487,
+      "type": "file"
+    },
+    {
+      "path": "users/validators.go",
+      "accessCount": 2,
+      "lastAccessed": 1773388017481,
+      "type": "file"
+    },
+    {
+      "path": "common/unit_test.go",
+      "accessCount": 2,
+      "lastAccessed": 1773388051523,
+      "type": "file"
+    },
+    {
+      "path": "users/unit_test.go",
+      "accessCount": 2,
+      "lastAccessed": 1773388093812,
+      "type": "file"
+    },
+    {
+      "path": "openspec/specs/auth.md",
+      "accessCount": 2,
+      "lastAccessed": 1773388418163,
+      "type": "file"
+    },
+    {
+      "path": ".claude/commands/opsx-propose.md",
+      "accessCount": 1,
+      "lastAccessed": 1773385864113,
+      "type": "file"
+    },
+    {
+      "path": ".claude/commands/opsx-apply.md",
+      "accessCount": 1,
+      "lastAccessed": 1773385892020,
+      "type": "file"
+    },
+    {
+      "path": ".claude/commands/opsx-archive.md",
+      "accessCount": 1,
+      "lastAccessed": 1773385919650,
+      "type": "file"
+    },
+    {
+      "path": "docs/migration-plan.md",
+      "accessCount": 1,
+      "lastAccessed": 1773386531277,
+      "type": "file"
+    },
+    {
+      "path": "openspec/specs/overview.md",
+      "accessCount": 1,
+      "lastAccessed": 1773387192448,
+      "type": "file"
+    },
+    {
+      "path": "openspec/specs/profiles.md",
+      "accessCount": 1,
+      "lastAccessed": 1773387211348,
+      "type": "file"
+    },
+    {
+      "path": "openspec/specs/articles.md",
+      "accessCount": 1,
+      "lastAccessed": 1773387225541,
+      "type": "file"
+    },
+    {
+      "path": "openspec/specs/comments.md",
+      "accessCount": 1,
+      "lastAccessed": 1773387239799,
+      "type": "file"
+    },
+    {
+      "path": "openspec/specs/favorites.md",
+      "accessCount": 1,
+      "lastAccessed": 1773387251321,
+      "type": "file"
+    },
+    {
+      "path": "openspec/specs/tags.md",
+      "accessCount": 1,
+      "lastAccessed": 1773387260838,
+      "type": "file"
+    },
+    {
+      "path": "openspec/specs/models.md",
+      "accessCount": 1,
+      "lastAccessed": 1773387279880,
+      "type": "file"
+    },
+    {
+      "path": "openspec/specs/middleware.md",
+      "accessCount": 1,
+      "lastAccessed": 1773387298475,
+      "type": "file"
+    },
+    {
+      "path": "openspec/specs/common.md",
+      "accessCount": 1,
+      "lastAccessed": 1773387317303,
+      "type": "file"
+    },
+    {
+      "path": ".claude/skills/add-endpoint/SKILL.md",
+      "accessCount": 1,
+      "lastAccessed": 1773387610270,
+      "type": "file"
+    },
+    {
+      "path": ".claude/skills/add-test/SKILL.md",
+      "accessCount": 1,
+      "lastAccessed": 1773387630276,
+      "type": "file"
+    },
+    {
+      "path": ".claude/skills/run-qa/SKILL.md",
+      "accessCount": 1,
+      "lastAccessed": 1773387641405,
+      "type": "file"
+    },
+    {
+      "path": ".claude/skills/review-change/SKILL.md",
+      "accessCount": 1,
+      "lastAccessed": 1773387666606,
+      "type": "file"
+    },
+    {
+      "path": "scripts/pre-commit",
+      "accessCount": 1,
+      "lastAccessed": 1773390226567,
+      "type": "file"
+    },
+    {
+      "path": "scripts/pre-push",
+      "accessCount": 1,
+      "lastAccessed": 1773390613297,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}

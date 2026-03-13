@@ -3,9 +3,10 @@ package users
 import (
 	"errors"
 
-	"github.com/gothinkster/golang-gin-realworld-example-app/common"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
+
+	"github.com/gothinkster/golang-gin-realworld-example-app/common"
 )
 
 // Models should only be concerned with database schema, more strict checking should be put in validator.

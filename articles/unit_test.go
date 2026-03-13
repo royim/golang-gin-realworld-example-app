@@ -9,11 +9,12 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gothinkster/golang-gin-realworld-example-app/common"
-	"github.com/gothinkster/golang-gin-realworld-example-app/users"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
+
+	"github.com/gothinkster/golang-gin-realworld-example-app/common"
+	"github.com/gothinkster/golang-gin-realworld-example-app/users"
 )
 
 var test_db *gorm.DB
@@ -1588,6 +1589,308 @@ func TestCommentDeleteAuthorizationForbidden(t *testing.T) {
 	foundComment, err := FindOneComment(&CommentModel{Model: gorm.Model{ID: comment.ID}})
 	asserts.NoError(err, "Comment should still exist")
 	asserts.Equal(comment.ID, foundComment.ID, "Comment ID should match")
+}
+
+// === Validator Boundary Tests (from openspec/specs/articles.md) ===
+
+func TestArticleModelValidatorTitleMinLength(t *testing.T) {
+	asserts := assert.New(t)
+	r := setupRouter()
+	user := createTestUser()
+
+	// Title with 3 chars (below min=4) should fail
+	body := `{"article":{"title":"abc","description":"Valid description","body":"Valid body"}}`
+	req, _ := http.NewRequest("POST", "/api/articles/", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	common.HeaderTokenMock(req, user.ID)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	asserts.Equal(http.StatusUnprocessableEntity, w.Code, "Title below min=4 should return 422")
+
+	// Title with exactly 4 chars should succeed
+	body = `{"article":{"title":"abcd","description":"Valid description","body":"Valid body"}}`
+	req, _ = http.NewRequest("POST", "/api/articles/", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	common.HeaderTokenMock(req, user.ID)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	asserts.Equal(http.StatusCreated, w.Code, "Title with exactly 4 chars should succeed")
+}
+
+func TestArticleModelValidatorMissingRequiredFields(t *testing.T) {
+	asserts := assert.New(t)
+	r := setupRouter()
+	user := createTestUser()
+
+	// Missing title
+	body := `{"article":{"description":"desc","body":"body"}}`
+	req, _ := http.NewRequest("POST", "/api/articles/", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	common.HeaderTokenMock(req, user.ID)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	asserts.Equal(http.StatusUnprocessableEntity, w.Code, "Missing title should return 422")
+
+	// Missing description
+	body = `{"article":{"title":"Valid Title","body":"body"}}`
+	req, _ = http.NewRequest("POST", "/api/articles/", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	common.HeaderTokenMock(req, user.ID)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	asserts.Equal(http.StatusUnprocessableEntity, w.Code, "Missing description should return 422")
+
+	// Missing body
+	body = `{"article":{"title":"Valid Title","description":"desc"}}`
+	req, _ = http.NewRequest("POST", "/api/articles/", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	common.HeaderTokenMock(req, user.ID)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	asserts.Equal(http.StatusUnprocessableEntity, w.Code, "Missing body should return 422")
+}
+
+func TestArticleModelValidatorEmptyBody(t *testing.T) {
+	asserts := assert.New(t)
+	r := setupRouter()
+	user := createTestUser()
+
+	// Empty JSON body
+	req, _ := http.NewRequest("POST", "/api/articles/", bytes.NewBufferString("{}"))
+	req.Header.Set("Content-Type", "application/json")
+	common.HeaderTokenMock(req, user.ID)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	asserts.Equal(http.StatusUnprocessableEntity, w.Code, "Empty body should return 422")
+}
+
+func TestCommentModelValidatorMissingBody(t *testing.T) {
+	asserts := assert.New(t)
+	r := setupRouter()
+	user := createTestUser()
+
+	article, _ := createArticleWithUser(
+		fmt.Sprintf("Comment Validation %d", common.RandInt()),
+		fmt.Sprintf("comment-validation-%d", common.RandInt()),
+	)
+
+	// Empty comment body
+	body := `{"comment":{}}`
+	req, _ := http.NewRequest("POST", fmt.Sprintf("/api/articles/%s/comments", article.Slug), bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	common.HeaderTokenMock(req, user.ID)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	asserts.Equal(http.StatusUnprocessableEntity, w.Code, "Missing comment body should return 422")
+}
+
+// === NewArticleModelValidatorFillWith Tests (from openspec/specs/articles.md) ===
+
+func TestNewArticleModelValidatorFillWithPreservesData(t *testing.T) {
+	asserts := assert.New(t)
+
+	tags := []TagModel{
+		{Tag: "go"},
+		{Tag: "testing"},
+	}
+	article := ArticleModel{
+		Title:       "Original Title",
+		Description: "Original Description",
+		Body:        "Original Body",
+		Tags:        tags,
+	}
+
+	validator := NewArticleModelValidatorFillWith(article)
+	asserts.Equal("Original Title", validator.Article.Title, "Title should be preserved")
+	asserts.Equal("Original Description", validator.Article.Description, "Description should be preserved")
+	asserts.Equal("Original Body", validator.Article.Body, "Body should be preserved")
+	asserts.Equal(2, len(validator.Article.Tags), "Tags count should be preserved")
+	asserts.Contains(validator.Article.Tags, "go", "Tags should contain 'go'")
+	asserts.Contains(validator.Article.Tags, "testing", "Tags should contain 'testing'")
+}
+
+func TestNewArticleModelValidatorFillWithEmptyTags(t *testing.T) {
+	asserts := assert.New(t)
+
+	article := ArticleModel{
+		Title:       "No Tags Article",
+		Description: "Description",
+		Body:        "Body",
+		Tags:        []TagModel{},
+	}
+
+	validator := NewArticleModelValidatorFillWith(article)
+	asserts.Equal(0, len(validator.Article.Tags), "Empty tags should result in empty slice")
+}
+
+// === DeleteArticleModel / DeleteCommentModel Tests (from openspec/specs/models.md) ===
+
+func TestDeleteArticleModel(t *testing.T) {
+	asserts := assert.New(t)
+
+	article, _ := createArticleWithUser(
+		fmt.Sprintf("Delete Article %d", common.RandInt()),
+		fmt.Sprintf("delete-article-%d", common.RandInt()),
+	)
+
+	err := DeleteArticleModel(&ArticleModel{Model: gorm.Model{ID: article.ID}})
+	asserts.NoError(err, "Delete should not error")
+
+	_, findErr := FindOneArticle(&ArticleModel{Model: gorm.Model{ID: article.ID}})
+	asserts.Error(findErr, "Deleted article should not be found")
+}
+
+func TestDeleteCommentModel(t *testing.T) {
+	asserts := assert.New(t)
+
+	article, user := createArticleWithUser(
+		fmt.Sprintf("Comment Delete %d", common.RandInt()),
+		fmt.Sprintf("comment-delete-%d", common.RandInt()),
+	)
+
+	articleUserModel := GetArticleUserModel(user)
+	comment := CommentModel{
+		ArticleID: article.ID,
+		AuthorID:  articleUserModel.ID,
+		Body:      "Comment to delete",
+	}
+	test_db.Create(&comment)
+
+	err := DeleteCommentModel(&CommentModel{Model: gorm.Model{ID: comment.ID}})
+	asserts.NoError(err, "Delete comment should not error")
+
+	_, findErr := FindOneComment(&CommentModel{Model: gorm.Model{ID: comment.ID}})
+	asserts.Error(findErr, "Deleted comment should not be found")
+}
+
+// === ArticleModel.Update Tests (from openspec/specs/models.md) ===
+
+func TestArticleModelUpdate(t *testing.T) {
+	asserts := assert.New(t)
+
+	article, _ := createArticleWithUser(
+		fmt.Sprintf("Update Article %d", common.RandInt()),
+		fmt.Sprintf("update-article-%d", common.RandInt()),
+	)
+
+	err := article.Update(ArticleModel{
+		Title:       "Updated Title",
+		Description: "Updated Description",
+	})
+	asserts.NoError(err, "Update should not error")
+
+	found, findErr := FindOneArticle(&ArticleModel{Model: gorm.Model{ID: article.ID}})
+	asserts.NoError(findErr, "Updated article should be found")
+	asserts.Equal("Updated Title", found.Title, "Title should be updated")
+	asserts.Equal("Updated Description", found.Description, "Description should be updated")
+	asserts.Equal("Test Body", found.Body, "Body should remain unchanged")
+}
+
+// === BatchGetFavoriteCounts / BatchGetFavoriteStatus Edge Cases (from openspec/specs/favorites.md) ===
+
+func TestBatchGetFavoriteCountsEmptyInput(t *testing.T) {
+	asserts := assert.New(t)
+
+	result := BatchGetFavoriteCounts([]uint{})
+	asserts.NotNil(result, "Should return non-nil map")
+	asserts.Equal(0, len(result), "Empty input should return empty map")
+}
+
+func TestBatchGetFavoriteStatusEmptyInput(t *testing.T) {
+	asserts := assert.New(t)
+
+	result := BatchGetFavoriteStatus([]uint{}, 1)
+	asserts.NotNil(result, "Should return non-nil map for empty IDs")
+	asserts.Equal(0, len(result), "Empty article IDs should return empty map")
+
+	result = BatchGetFavoriteStatus([]uint{1, 2}, 0)
+	asserts.NotNil(result, "Should return non-nil map for zero userID")
+	asserts.Equal(0, len(result), "Zero userID should return empty map")
+}
+
+func TestBatchGetFavoriteCountsWithData(t *testing.T) {
+	asserts := assert.New(t)
+
+	article1, user1 := createArticleWithUser(
+		fmt.Sprintf("Batch Fav1 %d", common.RandInt()),
+		fmt.Sprintf("batch-fav1-%d", common.RandInt()),
+	)
+	article2, _ := createArticleWithUser(
+		fmt.Sprintf("Batch Fav2 %d", common.RandInt()),
+		fmt.Sprintf("batch-fav2-%d", common.RandInt()),
+	)
+
+	// User1 favorites article1
+	articleUser1 := GetArticleUserModel(user1)
+	article1.favoriteBy(articleUser1)
+
+	counts := BatchGetFavoriteCounts([]uint{article1.ID, article2.ID})
+	asserts.Equal(uint(1), counts[article1.ID], "Article1 should have 1 favorite")
+	asserts.Equal(uint(0), counts[article2.ID], "Article2 should have 0 favorites")
+}
+
+func TestBatchGetFavoriteStatusWithData(t *testing.T) {
+	asserts := assert.New(t)
+
+	article, user := createArticleWithUser(
+		fmt.Sprintf("Batch Status %d", common.RandInt()),
+		fmt.Sprintf("batch-status-%d", common.RandInt()),
+	)
+
+	articleUser := GetArticleUserModel(user)
+	article.favoriteBy(articleUser)
+
+	status := BatchGetFavoriteStatus([]uint{article.ID}, articleUser.ID)
+	asserts.True(status[article.ID], "Should show article as favorited")
+}
+
+// === FindManyArticle Edge Cases (from openspec/specs/articles.md) ===
+
+func TestFindManyArticleInvalidLimitOffset(t *testing.T) {
+	asserts := assert.New(t)
+
+	// Invalid limit defaults to 20, invalid offset defaults to 0
+	articles, _, err := FindManyArticle("", "", "invalid", "invalid", "")
+	asserts.NoError(err, "Invalid limit/offset should not error")
+	asserts.NotNil(articles, "Should return articles slice")
+}
+
+func TestFindManyArticleWithNonExistentTag(t *testing.T) {
+	asserts := assert.New(t)
+
+	articles, count, err := FindManyArticle("nonexistent-tag-xyz", "", "20", "0", "")
+	asserts.NoError(err, "Non-existent tag should not error")
+	asserts.Equal(0, count, "Count should be 0 for non-existent tag")
+	asserts.Equal(0, len(articles), "Should return empty list for non-existent tag")
+}
+
+func TestFindManyArticleWithNonExistentAuthor(t *testing.T) {
+	asserts := assert.New(t)
+
+	articles, count, err := FindManyArticle("", "nonexistent-author-xyz", "20", "0", "")
+	asserts.NoError(err, "Non-existent author should not error")
+	asserts.Equal(0, count, "Count should be 0 for non-existent author")
+	asserts.Equal(0, len(articles), "Should return empty list for non-existent author")
+}
+
+// === GetArticleUserModel Edge Cases (from openspec/specs/models.md) ===
+
+func TestGetArticleUserModelZeroID(t *testing.T) {
+	asserts := assert.New(t)
+
+	// Zero ID user should return empty ArticleUserModel
+	result := GetArticleUserModel(users.UserModel{})
+	asserts.Equal(uint(0), result.ID, "Zero ID user should return empty ArticleUserModel")
+}
+
+func TestGetArticleUserModelIdempotent(t *testing.T) {
+	asserts := assert.New(t)
+
+	user := createTestUser()
+	first := GetArticleUserModel(user)
+	second := GetArticleUserModel(user)
+
+	asserts.Equal(first.ID, second.ID, "GetArticleUserModel should be idempotent (FirstOrCreate)")
 }
 
 // This is a hack way to add test database for each case

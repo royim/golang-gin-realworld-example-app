@@ -3,9 +3,10 @@ package articles
 import (
 	"strconv"
 
+	"gorm.io/gorm"
+
 	"github.com/gothinkster/golang-gin-realworld-example-app/common"
 	"github.com/gothinkster/golang-gin-realworld-example-app/users"
-	"gorm.io/gorm"
 )
 
 type ArticleModel struct {

@@ -1,0 +1,42 @@
+schema: spec-driven
+
+context: |
+  # Golang Gin RealWorld Example App
+  Tech stack: Go 1.21+, Gin v1.10, GORM v2, SQLite (cgo required), JWT v5
+  Domain: RealWorld "Conduit" blogging platform (users, articles, comments, tags, favorites, follows)
+  Architecture: Domain-based packages — users/, articles/, common/
+  Auth: JWT HS256 with "Authorization: Token <jwt>" header (not Bearer)
+  DB: SQLite via GORM v2, global singleton common.DB
+  Testing: Integration tests with real SQLite DB, httptest + Gin test mode
+
+  ## Package Convention (5-file per domain)
+  Each domain package contains: models.go, routers.go, serializers.go, validators.go, unit_test.go
+
+  ## Request Flow
+  hello.go → AuthMiddleware → Validator.Bind() → Model DB op → Serializer.Response() → JSON
+
+  ## Specs Location
+  Detailed API specs are in openspec/specs/ directory:
+  - overview.md — architecture, env vars, error format
+  - auth.md — registration, login, current user
+  - profiles.md — profile retrieval, follow/unfollow
+  - articles.md — article CRUD, feed, list with filters
+  - comments.md — comment CRUD
+  - favorites.md — favorite/unfavorite
+  - tags.md — tag listing
+  - models.md — all GORM models and relationships
+  - middleware.md — auth middleware details
+  - common.md — shared utilities and DB helpers
+
+rules:
+  proposal:
+    - Reference RealWorld spec for API contracts
+    - Include affected packages (users/, articles/, common/) in scope
+    - Note auth requirements per endpoint
+  tasks:
+    - Each task should map to a single package change
+    - Include test requirements per task
+    - Follow 5-file convention for new domain features
+  design:
+    - Use existing patterns from specs (validator→model→serializer)
+    - Reference openspec/specs/ for data structures

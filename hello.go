@@ -6,10 +6,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"gorm.io/gorm"
+
 	"github.com/gothinkster/golang-gin-realworld-example-app/articles"
 	"github.com/gothinkster/golang-gin-realworld-example-app/common"
 	"github.com/gothinkster/golang-gin-realworld-example-app/users"
-	"gorm.io/gorm"
 )
 
 func Migrate(db *gorm.DB) {

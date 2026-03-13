@@ -1,0 +1,129 @@
+{
+  "version": "2.0",
+  "lastUpdated": "2026-03-13T08:27:19.645Z",
+  "activeFeatures": [
+    "golang-gin-realworld-example-app",
+    "users",
+    "articles"
+  ],
+  "primaryFeature": "golang-gin-realworld-example-app",
+  "features": {
+    "golang-gin-realworld-example-app": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-03-13T07:47:31.362Z",
+        "lastUpdated": "2026-03-13T08:09:23.585Z"
+      },
+      "lastFile": "/Users/kyowon/Projects/study260313/golang-gin-realworld-example-app/e2e_test.go"
+    },
+    "users": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-03-13T07:48:13.638Z",
+        "lastUpdated": "2026-03-13T07:48:13.638Z"
+      },
+      "lastFile": "/Users/kyowon/Projects/study260313/golang-gin-realworld-example-app/users/unit_test.go"
+    },
+    "articles": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-03-13T07:50:32.901Z",
+        "lastUpdated": "2026-03-13T08:27:19.645Z"
+      },
+      "lastFile": "/Users/kyowon/Projects/study260313/golang-gin-realworld-example-app/articles/routers.go"
+    }
+  },
+  "pipeline": {
+    "currentPhase": 1,
+    "level": "Dynamic",
+    "phaseHistory": []
+  },
+  "session": {
+    "startedAt": "2026-03-13T06:54:14.100Z",
+    "onboardingCompleted": false,
+    "lastActivity": "2026-03-13T08:27:19.645Z"
+  },
+  "history": [
+    {
+      "timestamp": "2026-03-13T07:47:31.362Z",
+      "feature": "golang-gin-realworld-example-app",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-03-13T07:48:13.638Z",
+      "feature": "users",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-03-13T07:50:32.901Z",
+      "feature": "articles",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-03-13T07:55:00.262Z",
+      "feature": "golang-gin-realworld-example-app",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-03-13T08:00:19.101Z",
+      "feature": "golang-gin-realworld-example-app",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-03-13T08:00:26.266Z",
+      "feature": "golang-gin-realworld-example-app",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-03-13T08:01:49.122Z",
+      "feature": "golang-gin-realworld-example-app",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-03-13T08:09:05.925Z",
+      "feature": "golang-gin-realworld-example-app",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-03-13T08:09:23.585Z",
+      "feature": "golang-gin-realworld-example-app",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-03-13T08:27:18.509Z",
+      "feature": "articles",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-03-13T08:27:19.645Z",
+      "feature": "articles",
+      "phase": "do",
+      "action": "updated"
+    }
+  ]
+}

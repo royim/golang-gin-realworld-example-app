@@ -2,12 +2,14 @@ package articles
 
 import (
 	"errors"
-	"github.com/gin-gonic/gin"
-	"github.com/gothinkster/golang-gin-realworld-example-app/common"
-	"github.com/gothinkster/golang-gin-realworld-example-app/users"
-	"gorm.io/gorm"
 	"net/http"
 	"strconv"
+
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+
+	"github.com/gothinkster/golang-gin-realworld-example-app/common"
+	"github.com/gothinkster/golang-gin-realworld-example-app/users"
 )
 
 func ArticlesRegister(router *gin.RouterGroup) {
@@ -41,8 +43,6 @@ func ArticleCreate(c *gin.Context) {
 		c.JSON(http.StatusUnprocessableEntity, common.NewValidatorError(err))
 		return
 	}
-	//fmt.Println(articleModelValidator.articleModel.Author.UserModel)
-
 	if err := SaveOne(&articleModelValidator.articleModel); err != nil {
 		c.JSON(http.StatusUnprocessableEntity, common.NewError("database", err))
 		return
@@ -52,7 +52,6 @@ func ArticleCreate(c *gin.Context) {
 }
 
 func ArticleList(c *gin.Context) {
-	//condition := ArticleModel{}
 	tag := c.Query("tag")
 	author := c.Query("author")
 	favorited := c.Query("favorited")

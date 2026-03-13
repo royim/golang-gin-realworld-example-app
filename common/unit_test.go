@@ -366,3 +366,161 @@ func TestDatabaseWithCurrentDirectory(t *testing.T) {
 	sqlDB.Close()
 	os.Remove("test_simple.db")
 }
+
+// --- OpenSpec core requirement: JWT token claims validation (specs/auth.md) ---
+
+func TestGenTokenContainsValidClaims(t *testing.T) {
+	asserts := assert.New(t)
+
+	userID := uint(42)
+	token := GenToken(userID)
+	asserts.NotEmpty(token, "Token should not be empty")
+
+	claims, err := VerifyTokenClaims(token)
+	asserts.NoError(err, "Valid token should parse without error")
+
+	// Verify "id" claim matches the user ID
+	id, ok := claims["id"].(float64)
+	asserts.True(ok, "id claim should be a number")
+	asserts.Equal(float64(userID), id, "id claim should match user ID")
+
+	// Verify "exp" claim exists and is in the future
+	exp, ok := claims["exp"].(float64)
+	asserts.True(ok, "exp claim should be a number")
+	asserts.Greater(exp, float64(0), "exp should be a positive timestamp")
+}
+
+func TestGenTokenZeroID(t *testing.T) {
+	asserts := assert.New(t)
+
+	// Edge case: user ID 0 (anonymous/invalid)
+	token := GenToken(0)
+	asserts.NotEmpty(token, "Token should be generated even for ID 0")
+
+	claims, err := VerifyTokenClaims(token)
+	asserts.NoError(err, "Token with ID 0 should still be valid JWT")
+	asserts.Equal(float64(0), claims["id"], "id claim should be 0")
+}
+
+// --- OpenSpec core requirement: Error formatting (specs/overview.md) ---
+
+func TestNewErrorFormat(t *testing.T) {
+	asserts := assert.New(t)
+
+	err := errors.New("not found")
+	commonErr := NewError("article", err)
+
+	// Must match {"errors": {"article": "not found"}} format per spec
+	asserts.Contains(commonErr.Errors, "article", "Error key should be 'article'")
+	asserts.Equal("not found", commonErr.Errors["article"], "Error message should match")
+}
+
+func TestNewErrorMultipleKeys(t *testing.T) {
+	asserts := assert.New(t)
+
+	// Verify error structure is a map that can hold different keys
+	err1 := NewError("username", errors.New("already taken"))
+	asserts.Equal("already taken", err1.Errors["username"])
+
+	err2 := NewError("email", errors.New("invalid format"))
+	asserts.Equal("invalid format", err2.Errors["email"])
+}
+
+// --- OpenSpec core requirement: Bind uses ShouldBindWith not MustBindWith (specs/common.md) ---
+
+func TestBindWithInvalidJSON(t *testing.T) {
+	asserts := assert.New(t)
+
+	type TestStruct struct {
+		Name string `json:"name" binding:"required"`
+	}
+
+	r := gin.New()
+	r.POST("/test", func(c *gin.Context) {
+		var obj TestStruct
+		err := Bind(c, &obj)
+		if err != nil {
+			// Bind should return error but NOT auto-respond with 400
+			c.JSON(http.StatusUnprocessableEntity, NewValidatorError(err))
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"name": obj.Name})
+	})
+
+	// Test with missing required field
+	req, _ := http.NewRequest("POST", "/test", bytes.NewBufferString(`{}`))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	// Should be 422 (our handler's choice), NOT 400 (auto from MustBind)
+	asserts.Equal(http.StatusUnprocessableEntity, w.Code,
+		"Bind should let handler control the status code")
+}
+
+func TestBindWithValidJSON(t *testing.T) {
+	asserts := assert.New(t)
+
+	type TestStruct struct {
+		Name string `json:"name" binding:"required"`
+	}
+
+	r := gin.New()
+	r.POST("/test", func(c *gin.Context) {
+		var obj TestStruct
+		err := Bind(c, &obj)
+		if err != nil {
+			c.JSON(http.StatusUnprocessableEntity, NewValidatorError(err))
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"name": obj.Name})
+	})
+
+	req, _ := http.NewRequest("POST", "/test", bytes.NewBufferString(`{"name":"hello"}`))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	asserts.Equal(http.StatusOK, w.Code)
+	asserts.Contains(w.Body.String(), "hello")
+}
+
+// --- OpenSpec core requirement: Token extraction formats (specs/middleware.md) ---
+
+func TestExtractTokenFromHeaderEdgeCases(t *testing.T) {
+	asserts := assert.New(t)
+
+	// Empty string
+	asserts.Empty(ExtractTokenFromHeader(""), "Empty string should return empty")
+
+	// Only "Token" without space
+	asserts.Empty(ExtractTokenFromHeader("Token"), "Just 'Token' without value should return empty")
+
+	// "Token " with empty value
+	extracted := ExtractTokenFromHeader("Token ")
+	asserts.Equal("", extracted, "Token with empty value after space")
+
+	// Bearer scheme should be rejected (per spec: only Token scheme)
+	asserts.Empty(ExtractTokenFromHeader("Bearer abc.def.ghi"),
+		"Bearer scheme should not be accepted")
+
+	// Valid Token scheme
+	asserts.Equal("abc.def.ghi", ExtractTokenFromHeader("Token abc.def.ghi"),
+		"Valid Token scheme should extract correctly")
+}
+
+func TestVerifyTokenClaimsInvalidInputs(t *testing.T) {
+	asserts := assert.New(t)
+
+	// Empty token
+	_, err := VerifyTokenClaims("")
+	asserts.Error(err, "Empty token should fail verification")
+
+	// Malformed token
+	_, err = VerifyTokenClaims("not.a.valid.jwt")
+	asserts.Error(err, "Malformed token should fail verification")
+
+	// Token signed with wrong key
+	_, err = VerifyTokenClaims("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZXhwIjoxfQ.wrongsignature")
+	asserts.Error(err, "Token with wrong signature should fail")
+}

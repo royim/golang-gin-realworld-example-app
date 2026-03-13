@@ -3,6 +3,7 @@ package articles
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/gosimple/slug"
+
 	"github.com/gothinkster/golang-gin-realworld-example-app/common"
 	"github.com/gothinkster/golang-gin-realworld-example-app/users"
 )

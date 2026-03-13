@@ -9,9 +9,10 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gothinkster/golang-gin-realworld-example-app/common"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
+
+	"github.com/gothinkster/golang-gin-realworld-example-app/common"
 )
 
 var image_url = "https://golang.org/doc/gopher/frontpage.png"
@@ -541,6 +542,308 @@ func TestAuthMiddlewareNoToken(t *testing.T) {
 	r.ServeHTTP(w, req)
 	asserts.Equal(http.StatusOK, w.Code, "No token with auto401=false should proceed")
 	asserts.Contains(w.Body.String(), `"user_id":0`, "User ID should be 0")
+}
+
+// --- OpenSpec core requirement: User model DB operations (specs/models.md) ---
+
+func TestFindOneUserByUsername(t *testing.T) {
+	asserts := assert.New(t)
+	resetDBWithMock()
+
+	// Find existing user
+	user, err := FindOneUser(&UserModel{Username: "user1"})
+	asserts.NoError(err, "Should find existing user by username")
+	asserts.Equal("user1", user.Username)
+	asserts.Equal("user1@linkedin.com", user.Email)
+
+	// Find non-existing user
+	_, err = FindOneUser(&UserModel{Username: "nonexistent"})
+	asserts.Error(err, "Should return error for non-existing user")
+}
+
+func TestFindOneUserByEmail(t *testing.T) {
+	asserts := assert.New(t)
+	resetDBWithMock()
+
+	user, err := FindOneUser(&UserModel{Email: "user2@linkedin.com"})
+	asserts.NoError(err, "Should find existing user by email")
+	asserts.Equal("user2", user.Username)
+}
+
+func TestUserModelUpdate(t *testing.T) {
+	asserts := assert.New(t)
+	resetDBWithMock()
+
+	user, _ := FindOneUser(&UserModel{Username: "user1"})
+
+	// Update bio field
+	err := user.Update(UserModel{Bio: "updated bio"})
+	asserts.NoError(err, "Update should succeed")
+
+	// Verify update persisted
+	updatedUser, _ := FindOneUser(&UserModel{ID: user.ID})
+	asserts.Equal("updated bio", updatedUser.Bio, "Bio should be updated")
+	asserts.Equal("user1", updatedUser.Username, "Username should remain unchanged")
+}
+
+func TestUserModelSaveOne(t *testing.T) {
+	asserts := assert.New(t)
+	resetDBWithMock()
+
+	newUser := UserModel{
+		Username: "newuser",
+		Email:    "new@example.com",
+		Bio:      "new bio",
+	}
+	newUser.setPassword("password123")
+
+	err := SaveOne(&newUser)
+	asserts.NoError(err, "SaveOne should succeed")
+	asserts.NotEqual(uint(0), newUser.ID, "ID should be assigned after save")
+
+	// Verify persisted
+	found, err := FindOneUser(&UserModel{Username: "newuser"})
+	asserts.NoError(err)
+	asserts.Equal("new@example.com", found.Email)
+}
+
+// --- OpenSpec core requirement: Password security (specs/auth.md) ---
+
+func TestPasswordHashIsDifferentFromInput(t *testing.T) {
+	asserts := assert.New(t)
+
+	user := newUserModel()
+	user.setPassword("mypassword123")
+
+	asserts.NotEqual("mypassword123", user.PasswordHash,
+		"Password hash should differ from plaintext")
+	asserts.Equal(60, len(user.PasswordHash),
+		"bcrypt hash should be 60 characters")
+}
+
+func TestPasswordVerificationAfterSave(t *testing.T) {
+	asserts := assert.New(t)
+	resetDBWithMock()
+
+	// User from mock has password "password123"
+	user, _ := FindOneUser(&UserModel{Username: "user1"})
+
+	asserts.NoError(user.checkPassword("password123"),
+		"Correct password should verify")
+	asserts.Error(user.checkPassword("wrongpassword"),
+		"Wrong password should fail")
+	asserts.Error(user.checkPassword(""),
+		"Empty password should fail")
+}
+
+// --- OpenSpec core requirement: Follow self-referential M:N (specs/profiles.md, specs/models.md) ---
+
+func TestFollowSelfIsAllowed(t *testing.T) {
+	asserts := assert.New(t)
+	resetDBWithMock()
+
+	users := userModelMocker(1)
+	a := users[0]
+
+	// Following yourself should not error (spec doesn't explicitly forbid it)
+	err := a.following(a)
+	asserts.NoError(err, "Following self should not error")
+	asserts.True(a.isFollowing(a), "isFollowing self should return true")
+}
+
+func TestFollowIdempotent(t *testing.T) {
+	asserts := assert.New(t)
+	resetDBWithMock()
+
+	users := userModelMocker(2)
+	a := users[0]
+	b := users[1]
+
+	// Follow twice should not create duplicate
+	a.following(b)
+	a.following(b)
+	asserts.Equal(1, len(a.GetFollowings()),
+		"Following same user twice should still result in 1 following")
+}
+
+func TestUnfollowNonFollowed(t *testing.T) {
+	asserts := assert.New(t)
+	resetDBWithMock()
+
+	users := userModelMocker(2)
+	a := users[0]
+	b := users[1]
+
+	// Unfollow someone not followed should not error
+	err := a.unFollowing(b)
+	asserts.NoError(err, "Unfollowing non-followed user should not error")
+	asserts.False(a.isFollowing(b))
+}
+
+func TestGetFollowingsEmpty(t *testing.T) {
+	asserts := assert.New(t)
+	resetDBWithMock()
+
+	users := userModelMocker(1)
+	a := users[0]
+
+	followings := a.GetFollowings()
+	asserts.Equal(0, len(followings), "New user should have no followings")
+}
+
+// --- OpenSpec core requirement: Validator boundary values (specs/auth.md) ---
+
+func TestUserRegistrationValidatorBoundary(t *testing.T) {
+	asserts := assert.New(t)
+	resetDBWithMock()
+
+	r := gin.New()
+	UsersRegister(r.Group("/users"))
+
+	tests := []struct {
+		body         string
+		expectedCode int
+		msg          string
+	}{
+		// Username min=4
+		{
+			`{"user":{"username":"abc","email":"t@t.com","password":"password1"}}`,
+			http.StatusUnprocessableEntity,
+			"username 3 chars should fail (min=4)",
+		},
+		{
+			`{"user":{"username":"abcd","email":"bound@t.com","password":"password1"}}`,
+			http.StatusCreated,
+			"username 4 chars should pass (min=4)",
+		},
+		// Password min=8
+		{
+			`{"user":{"username":"passtest","email":"p@t.com","password":"1234567"}}`,
+			http.StatusUnprocessableEntity,
+			"password 7 chars should fail (min=8)",
+		},
+		{
+			`{"user":{"username":"passtest2","email":"p2@t.com","password":"12345678"}}`,
+			http.StatusCreated,
+			"password 8 chars should pass (min=8)",
+		},
+		// Email format
+		{
+			`{"user":{"username":"emailtest","email":"notanemail","password":"password1"}}`,
+			http.StatusUnprocessableEntity,
+			"invalid email format should fail",
+		},
+		// Missing required fields
+		{
+			`{"user":{"email":"m@t.com","password":"password1"}}`,
+			http.StatusUnprocessableEntity,
+			"missing username should fail",
+		},
+		{
+			`{"user":{"username":"missemail","password":"password1"}}`,
+			http.StatusUnprocessableEntity,
+			"missing email should fail",
+		},
+		{
+			`{"user":{"username":"misspass","email":"mp@t.com"}}`,
+			http.StatusUnprocessableEntity,
+			"missing password should fail",
+		},
+	}
+
+	for _, tc := range tests {
+		req, _ := http.NewRequest("POST", "/users/", bytes.NewBufferString(tc.body))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+		asserts.Equal(tc.expectedCode, w.Code, tc.msg)
+	}
+}
+
+// --- OpenSpec core requirement: Login error cases (specs/auth.md) ---
+
+func TestLoginValidatorBoundary(t *testing.T) {
+	asserts := assert.New(t)
+	resetDBWithMock()
+
+	r := gin.New()
+	UsersRegister(r.Group("/users"))
+
+	tests := []struct {
+		body         string
+		expectedCode int
+		msg          string
+	}{
+		// Empty body
+		{
+			`{}`,
+			http.StatusUnprocessableEntity,
+			"empty body should fail",
+		},
+		// Missing email
+		{
+			`{"user":{"password":"password123"}}`,
+			http.StatusUnprocessableEntity,
+			"missing email should fail",
+		},
+		// Missing password
+		{
+			`{"user":{"email":"user1@linkedin.com"}}`,
+			http.StatusUnprocessableEntity,
+			"missing password should fail",
+		},
+		// Invalid email format
+		{
+			`{"user":{"email":"notanemail","password":"password123"}}`,
+			http.StatusUnprocessableEntity,
+			"invalid email format should fail",
+		},
+	}
+
+	for _, tc := range tests {
+		req, _ := http.NewRequest("POST", "/users/login", bytes.NewBufferString(tc.body))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+		asserts.Equal(tc.expectedCode, w.Code, tc.msg)
+	}
+}
+
+// --- OpenSpec core requirement: NewUserModelValidatorFillWith preserves data (specs/auth.md PUT /api/user) ---
+
+func TestNewUserModelValidatorFillWith(t *testing.T) {
+	asserts := assert.New(t)
+
+	image := "https://example.com/photo.jpg"
+	user := UserModel{
+		Username: "testuser",
+		Email:    "test@example.com",
+		Bio:      "my bio",
+		Image:    &image,
+	}
+
+	validator := NewUserModelValidatorFillWith(user)
+	asserts.Equal("testuser", validator.User.Username)
+	asserts.Equal("test@example.com", validator.User.Email)
+	asserts.Equal("my bio", validator.User.Bio)
+	asserts.Equal("https://example.com/photo.jpg", validator.User.Image)
+	// Password should be set to RandomPassword to bypass re-hashing
+	asserts.Equal(common.RandomPassword, validator.User.Password,
+		"Password should be RandomPassword to skip re-hashing on update")
+}
+
+func TestNewUserModelValidatorFillWithNilImage(t *testing.T) {
+	asserts := assert.New(t)
+
+	user := UserModel{
+		Username: "testuser",
+		Email:    "test@example.com",
+		Image:    nil,
+	}
+
+	validator := NewUserModelValidatorFillWith(user)
+	asserts.Equal("", validator.User.Image,
+		"Nil image should result in empty string in validator")
 }
 
 // This is a hack way to add test database for each case, as whole test will just share one database.

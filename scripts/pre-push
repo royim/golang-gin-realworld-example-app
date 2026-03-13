@@ -1,0 +1,45 @@
+#!/bin/sh
+#
+# Pre-push hook: runs E2E tests + coverage check (80% threshold).
+# Install: make setup-hooks
+
+echo "🚀 Running pre-push checks..."
+echo ""
+
+# ── E2E Tests ──
+echo "── E2E Tests ──"
+go test -v -count=1 . -run TestE2E
+STATUS=$?
+
+if [ $STATUS -ne 0 ]; then
+    echo ""
+    echo "✗ E2E tests failed. Fix issues before pushing."
+    exit 1
+fi
+
+echo ""
+
+# ── Coverage Check (threshold: 80%) ──
+echo "── Coverage Check ──"
+THRESHOLD=80
+
+go test -coverprofile=coverage.out ./... > /dev/null 2>&1
+TOTAL=$(go tool cover -func=coverage.out | grep '^total:' | awk '{print $NF}' | sed 's/%//')
+
+echo "Coverage: ${TOTAL}% (threshold: ${THRESHOLD}%)"
+
+# Compare as integers (remove decimal point)
+TOTAL_INT=$(echo "$TOTAL" | sed 's/\.//')
+THRESHOLD_INT=$((THRESHOLD * 10))
+
+if [ "$TOTAL_INT" -lt "$THRESHOLD_INT" ]; then
+    echo "✗ Coverage ${TOTAL}% is below ${THRESHOLD}% threshold."
+    rm -f coverage.out
+    exit 1
+fi
+
+rm -f coverage.out
+
+echo ""
+echo "✓ Pre-push check passed (E2E ✓, Coverage ${TOTAL}% ≥ ${THRESHOLD}%)"
+exit 0
